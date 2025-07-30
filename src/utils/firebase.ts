@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { FirebaseConfig } from '../types';
 
 // Helper: Get App ID and Firebase Config
@@ -47,9 +48,23 @@ export const initializeFirebase = () => {
   const app = initializeApp(firebaseConfig);
   const authInstance = getAuth(app);
   const dbInstance = getFirestore(app);
+  const storageInstance = getStorage(app);
 
-  return { app, authInstance, dbInstance };
+  // Connect to emulators in development
+  if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_USE_EMULATORS === 'true') {
+    try {
+      connectFirestoreEmulator(dbInstance, 'localhost', 8080);
+      connectStorageEmulator(storageInstance, 'localhost', 9199);
+    } catch (error) {
+      console.log('Emulators already connected or not available');
+    }
+  }
+
+  return { app, authInstance, dbInstance, storageInstance: storageInstance };
 };
+
+// Export storage for use in other modules
+export const storage = getStorage(initializeApp(getFirebaseConfig()));
 
 export const authenticateUser = async (auth: any) => {
   try {
@@ -77,6 +92,36 @@ export const authenticateUser = async (auth: any) => {
       console.error("Anonymous authentication also failed:", fallbackError);
       throw fallbackError;
     }
+  }
+};
+
+// Enhanced authentication functions
+export const signInUser = async (auth: any, email: string, password: string) => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error: any) {
+    console.error("Sign in failed:", error);
+    throw new Error(error.message || 'Sign in failed');
+  }
+};
+
+export const registerUser = async (auth: any, email: string, password: string) => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error: any) {
+    console.error("Registration failed:", error);
+    throw new Error(error.message || 'Registration failed');
+  }
+};
+
+export const signOutUser = async (auth: any) => {
+  try {
+    await signOut(auth);
+  } catch (error) {
+    console.error("Sign out failed:", error);
+    throw error;
   }
 };
 
