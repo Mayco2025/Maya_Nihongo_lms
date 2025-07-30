@@ -1,0 +1,21 @@
+[debug] [2025-07-25T07:34:48.792Z] ----------------------------------------------------------------------
+[debug] [2025-07-25T07:34:48.797Z] Command:       /Users/noaheskindir/.volta/tools/image/node/22.14.0/bin/node /Users/noaheskindir/.volta/tools/image/packages/firebase-tools/bin/firebase init
+[debug] [2025-07-25T07:34:48.798Z] CLI Version:   14.11.1
+[debug] [2025-07-25T07:34:48.798Z] Platform:      darwin
+[debug] [2025-07-25T07:34:48.798Z] Node Version:  v22.14.0
+[debug] [2025-07-25T07:34:48.799Z] Time:          Fri Jul 25 2025 16:34:48 GMT+0900 (Japan Standard Time)
+[debug] [2025-07-25T07:34:48.799Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-07-25T07:34:48.806Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-07-25T07:34:48.807Z] > authorizing via signed-in user (noah@mayanihongo.net)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/noaheskindir/Desktop/Maya_lms
+
