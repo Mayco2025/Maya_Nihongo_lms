@@ -4,6 +4,8 @@ import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
 import { User } from '../types';
 import { initializeFirebase, authenticateUser, getAppId, MOCK_SCHEDULE, MOCK_MATERIALS } from '../utils/firebase';
 import { isDemoMode, DEMO_USER } from '../utils/demoMode';
+import { secureSession } from '../utils/security';
+import { getSecureApi } from '../services/secureApi';
 
 export const useFirebase = () => {
   const [db, setDb] = useState<any>(null);
@@ -27,14 +29,24 @@ export const useFirebase = () => {
 
       const unsubscribe = onAuthStateChanged(authInstance, async (currentUser) => {
         if (currentUser) {
-          setUser({
+          const userData: User = {
             uid: currentUser.uid,
             email: currentUser.email || undefined,
             displayName: currentUser.displayName || undefined,
             role: 'student', // Default role, will be updated from database
             createdAt: new Date(),
             lastLoginAt: new Date()
-          });
+          };
+          
+          setUser(userData);
+          
+          // Initialize secure API with user
+          try {
+            const secureApi = getSecureApi(dbInstance);
+            secureApi.setUser(userData);
+          } catch (error) {
+            console.error("Failed to initialize secure API:", error);
+          }
         } else {
           try {
             await authenticateUser(authInstance);

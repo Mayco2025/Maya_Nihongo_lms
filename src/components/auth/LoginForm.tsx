@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthFormData } from '../../types';
+import { validateEmail, sanitizeInput } from '../../utils/security';
 import { MayaLogo } from '../icons';
 
 interface LoginFormProps {
@@ -23,7 +24,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const sanitizedValue = sanitizeInput(value);
+    setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -33,7 +35,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.email) newErrors.email = 'Email is required';
+    else if (!validateEmail(formData.email)) newErrors.email = 'Email is invalid';
+
     if (!formData.password) newErrors.password = 'Password is required';
+    else if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

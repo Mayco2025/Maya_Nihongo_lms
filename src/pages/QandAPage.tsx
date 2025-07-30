@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Question, User } from '../types';
-import { collection, query, onSnapshot, addDoc, doc, updateDoc } from 'firebase/firestore';
-import { getAppId } from '../utils/firebase';
+import { getSecureApi } from '../services/secureApi';
 
 interface QandAPageProps {
   db: any;
@@ -14,45 +13,43 @@ const QandAPage: React.FC<QandAPageProps> = ({ db, user, isTeacherMode = false }
   const [newQuestion, setNewQuestion] = useState('');
   const [loading, setLoading] = useState(true);
   const [answerForms, setAnswerForms] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!db) return;
+    if (!db || !user) return;
     
-    setLoading(true);
-    const appId = getAppId();
-    const qandaRef = collection(db, `artifacts/${appId}/public/data/qanda`);
-    const q = query(qandaRef);
-    
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const qList: Question[] = [];
-      querySnapshot.forEach((doc) => {
-        qList.push({ id: doc.id, ...doc.data() } as Question);
+    try {
+      const secureApi = getSecureApi(db);
+      secureApi.setUser(user);
+      
+      setLoading(true);
+      const unsubscribe = secureApi.subscribeToQuestions((questionsList) => {
+        setQuestions(questionsList);
+        setLoading(false);
+        setError(null);
       });
-      qList.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
-      setQuestions(qList);
+      
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Error setting up secure Q&A: ", error);
+      setError("Failed to load Q&A. Please try again.");
       setLoading(false);
-    }, (error) => {
-      console.error("Error fetching Q&A: ", error);
-      setLoading(false);
-    });
-    
-    return () => unsubscribe();
-  }, [db]);
+    }
+  }, [db, user]);
 
   const handleQuestionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newQuestion.trim() === '' || !db || !user) return;
     
-    const appId = getAppId();
-    const qandaRef = collection(db, `artifacts/${appId}/public/data/qanda`);
-    await addDoc(qandaRef, {
-      question: newQuestion,
-      studentId: user.uid,
-      studentName: "Student",
-      timestamp: new Date(),
-      answer: null,
-    });
-    setNewQuestion('');
+    try {
+      const secureApi = getSecureApi(db);
+      await secureApi.submitQuestion(newQuestion);
+      setNewQuestion('');
+      setError(null);
+    } catch (error) {
+      console.error('Failed to submit question:', error);
+      setError(error instanceof Error ? error.message : 'Failed to submit question');
+    }
   };
 
   const handleAnswerSubmit = async (e: React.FormEvent, questionId: string) => {
@@ -60,19 +57,25 @@ const QandAPage: React.FC<QandAPageProps> = ({ db, user, isTeacherMode = false }
     const answerText = answerForms[questionId];
     if (!answerText || answerText.trim() === '' || !db) return;
     
-    const appId = getAppId();
-    const questionDocRef = doc(db, `artifacts/${appId}/public/data/qanda`, questionId);
-    await updateDoc(questionDocRef, {
-      answer: answerText,
-      answeredBy: "Teacher", // In real app, use teacher's name
-      answeredAt: new Date(),
-    });
-    setAnswerForms(prev => ({ ...prev, [questionId]: '' }));
+    try {
+      const secureApi = getSecureApi(db);
+      await secureApi.answerQuestion(questionId, answerText);
+      setAnswerForms(prev => ({ ...prev, [questionId]: '' }));
+      setError(null);
+    } catch (error) {
+      console.error('Failed to submit answer:', error);
+      setError(error instanceof Error ? error.message : 'Failed to submit answer');
+    }
   };
 
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Q&A Forum</h2>
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
       {!isTeacherMode && (
         <div className="bg-white/80 backdrop-blur-sm p-6 rounded-lg shadow-md border mb-8">
           <form onSubmit={handleQuestionSubmit}>

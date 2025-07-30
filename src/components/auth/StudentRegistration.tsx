@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthFormData } from '../../types';
+import { validateEmail, validateStudentId, sanitizeInput } from '../../utils/security';
 import { MayaLogo } from '../icons';
 
 interface StudentRegistrationProps {
@@ -26,7 +27,8 @@ const StudentRegistration: React.FC<StudentRegistrationProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const sanitizedValue = sanitizeInput(value);
+    setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -37,14 +39,19 @@ const StudentRegistration: React.FC<StudentRegistrationProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.email) newErrors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
+    else if (!validateEmail(formData.email)) newErrors.email = 'Email is invalid';
 
     if (!formData.password) newErrors.password = 'Password is required';
-    else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    else if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
 
     if (!formData.firstName) newErrors.firstName = 'First name is required';
+    else if (formData.firstName.length < 2) newErrors.firstName = 'First name must be at least 2 characters';
+    
     if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    else if (formData.lastName.length < 2) newErrors.lastName = 'Last name must be at least 2 characters';
+    
     if (!formData.studentId) newErrors.studentId = 'Student ID is required';
+    else if (!validateStudentId(formData.studentId)) newErrors.studentId = 'Student ID must be 6-10 characters (letters and numbers only)';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
