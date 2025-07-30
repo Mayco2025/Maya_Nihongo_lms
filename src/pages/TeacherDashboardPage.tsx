@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { HelpCircle, CalendarDays, Users, PlusCircle } from '../components/icons';
-import { Stats } from '../types';
+import { HelpCircle, CalendarDays, Users, PlusCircle, UserCheck } from '../components/icons';
+import { Stats, User } from '../types';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { getAppId } from '../utils/firebase';
+import UserManagement from '../components/teacher/UserManagement';
 
 interface TeacherDashboardPageProps {
   db: any;
+  currentUser?: User;
 }
 
 interface StatCardProps {
@@ -26,8 +28,9 @@ const StatCard: React.FC<StatCardProps> = ({ icon, value, label }) => (
   </div>
 );
 
-const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({ db }) => {
+const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({ db, currentUser }) => {
   const [stats, setStats] = useState<Stats>({ unansweredQuestions: 0, totalClasses: 0 });
+  const [activeTab, setActiveTab] = useState<'overview' | 'users'>('overview');
 
   useEffect(() => {
     if (!db) return;
@@ -53,37 +56,70 @@ const TeacherDashboardPage: React.FC<TeacherDashboardPageProps> = ({ db }) => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Teacher Overview</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard 
-          icon={<HelpCircle className="w-8 h-8" />} 
-          value={stats.unansweredQuestions} 
-          label="Unanswered Questions" 
-        />
-        <StatCard 
-          icon={<CalendarDays className="w-8 h-8" />} 
-          value={stats.totalClasses} 
-          label="Total Classes Scheduled" 
-        />
-        <StatCard 
-          icon={<Users className="w-8 h-8" />} 
-          value={1} 
-          label="Active Students (Demo)" 
-        />
-      </div>
-      <div className="mt-8">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h3>
-        <div className="flex space-x-4">
-          <button className="flex items-center bg-rose-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-rose-600 transition-colors">
-            <PlusCircle className="w-5 h-5 mr-2" />
-            Add New Class
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Teacher Dashboard</h2>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'overview'
+                ? 'bg-rose-500 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            Overview
           </button>
-          <button className="flex items-center bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 transition-colors">
-            <PlusCircle className="w-5 h-5 mr-2" />
-            Add New Material
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'users'
+                ? 'bg-rose-500 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            User Management
           </button>
         </div>
       </div>
+
+      {activeTab === 'overview' && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <StatCard 
+              icon={<HelpCircle className="w-8 h-8" />} 
+              value={stats.unansweredQuestions} 
+              label="Unanswered Questions" 
+            />
+            <StatCard 
+              icon={<CalendarDays className="w-8 h-8" />} 
+              value={stats.totalClasses} 
+              label="Total Classes Scheduled" 
+            />
+            <StatCard 
+              icon={<UserCheck className="w-8 h-8" />} 
+              value={1} 
+              label="Active Students (Demo)" 
+            />
+          </div>
+          <div className="mt-8">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h3>
+            <div className="flex space-x-4">
+              <button className="flex items-center bg-rose-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-rose-600 transition-colors">
+                <PlusCircle className="w-5 h-5 mr-2" />
+                Add New Class
+              </button>
+              <button className="flex items-center bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 transition-colors">
+                <PlusCircle className="w-5 h-5 mr-2" />
+                Add New Material
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'users' && currentUser && (
+        <UserManagement db={db} currentUser={currentUser} />
+      )}
     </div>
   );
 };

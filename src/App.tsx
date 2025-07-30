@@ -37,7 +37,7 @@ const App: React.FC = () => {
           return <QandAPage db={db} user={user!} isTeacherMode={isTeacherMode} />;
         case 'dashboard':
         default: 
-          return <TeacherDashboardPage db={db} />;
+          return <TeacherDashboardPage db={db} currentUser={user!} />;
       }
     } else {
       switch (currentPage) {
